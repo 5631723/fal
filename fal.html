@@ -1,0 +1,1974 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fal.ai API Explorer</title>
+  <link rel="stylesheet" href="/viewer.min.css" />
+  <script src="/viewer.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Configure Tailwind dark mode
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#050505',  // 更暗的背景色
+            'dark-card': '#0a0a0a', // 更暗的卡片背景
+            'dark-border': '#1a1a1a', // 更暗的边框
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom styles */
+    .image-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0.5rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .image-container:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark .image-container:hover {
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .light-glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .dark-glass {
+      background: rgba(0, 0, 0, 0.6); /* 增加不透明度使背景更暗 */
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .loading-animation {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    /* Added slide-in animations */
+    .slide-in-right {
+      animation: slideInRight 0.5s ease-out;
+    }
+
+    @keyframes slideInRight {
+      0% {
+        opacity: 0;
+        transform: translateX(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .slide-in-up {
+      animation: slideInUp 0.6s ease-out;
+    }
+
+    @keyframes slideInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* History image styles */
+    .history-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 0.375rem;
+      transition: all 0.3s;
+    }
+
+    .history-image:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    /* Delete button modern flat style */
+    .history-item .delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.2s;
+      cursor: pointer;
+    }
+    .history-item:hover .delete-btn {
+      opacity: 1;
+    }
+    .history-item .delete-btn:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* Scrollbar styles */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 9px;
+    }
+
+    .light .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+    }
+
+    .light .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 10px;
+    }
+
+    .light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .dark .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+    }
+
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      border: 2px solid rgba(0, 0, 0, 0.3); /* 添加边框增加对比度 */
+    }
+
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* Log styles */
+    .logs-container {
+      height: 120px;
+      font-family: monospace;
+    }
+
+    .log-entry {
+      margin-bottom: 2px;
+      line-height: 1.3;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+      max-width: 100%;
+    }
+
+    .log-info { color: #a3e635; } /* Lime green for info */
+    .log-warn { color: #fbbf24; } /* Amber for warning */
+    .log-error { color: #f87171; } /* Red for error */
+
+    /* Theme toggle button */
+    .theme-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 30px;
+    }
+
+    .theme-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 30px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1) inset;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .slider {
+      background-color: #6366f1; /* Indigo */
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px #6366f1;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(30px);
+    }
+
+    .slider:after {
+      content: '☀️'; /* Sun icon */
+      color: #fff;
+      display: block;
+      position: absolute;
+      transform: translate(-50%,-50%);
+      top: 50%;
+      left: 30%;
+      font-size: 12px;
+      transition: .3s ease-in-out;
+    }
+
+    input:checked + .slider:after {
+      content: '🌙'; /* Moon icon */
+      left: 70%;
+    }
+
+    /* Slider container styles */
+    .slider-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slider-value {
+      margin-top: 4px;
+      font-size: 0.875rem; /* text-sm */
+      text-align: right;
+    }
+
+    /* Custom range input styles */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 5px;
+      background: #d3d3d3; /* Light gray */
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6366f1; /* Indigo */
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 8px rgba(99,102,241,0.5); /* Indigo shadow */
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6366f1; /* Indigo */
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-moz-range-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    .dark input[type="range"] {
+      background: #2d3748; /* Gray-700 */
+    }
+
+    /* Toggle switch styles */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+      box-shadow: 0 0 3px rgba(0,0,0,0.1) inset;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .toggle-slider {
+      background-color: #6366f1; /* Indigo */
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    /* Button hover effect */
+    .btn-hover-effect {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-hover-effect:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.3);
+      opacity: 0;
+      border-radius: 100%;
+      transform: scale(1, 1) translate(-50%);
+      transform-origin: 50% 50%;
+    }
+
+    .btn-hover-effect:hover:after {
+      animation: ripple 1s ease-out;
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+      }
+      20% {
+        transform: scale(25, 25);
+        opacity: 0.3;
+      }
+      100% {
+        opacity: 0;
+        transform: scale(40, 40);
+      }
+    }
+
+    /* Card hover effect */
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark .card-hover:hover {
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Input focus effect */
+    .input-focus-effect {
+      transition: all 0.3s ease;
+    }
+
+    .input-focus-effect:focus {
+      transform: scale(1.02);
+    }
+
+    /* Dark mode specific styles */
+    .dark body {
+      background-color: #030303; /* 更暗的灰色 */
+    }
+
+    .dark .card-bg {
+      background-color: #080808; /* 近黑色 */
+    }
+
+    .dark .border-color {
+      border-color: #1a1a1a; /* 更暗的边框 */
+    }
+
+    /* Custom model input transition */
+    #customModelInput {
+      transition: opacity 0.3s ease, max-height 0.3s ease, margin-top 0.3s ease;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0;
+    }
+
+    #customModelInput.visible {
+      max-height: 100px; /* Sufficient height */
+      opacity: 1;
+      margin-top: 0.75rem; /* mt-3 */
+    }
+
+    /* 新增：根据 body.light 与 body.dark 设置背景 */
+    body.light {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    body.dark {
+      background: linear-gradient(135deg, #121212 0%, #000000 100%);
+    }
+  </style>
+  <script defer src="https://umami.sxjeru.top/script.js" data-website-id="5762b24a-8944-40b3-9550-359e500e4d19"></script>
+  
+</head>
+<body class="min-h-screen text-white font-sans light transition-colors duration-500">
+
+  <div class="container mx-auto px-3 py-5">
+    <header class="flex flex-col md:flex-row justify-between items-center mb-8 slide-in-up">
+      <div class="text-center md:text-left mb-4 md:mb-0">
+        <h1 class="text-4xl font-bold mb-2">fal.ai API Explorer</h1>
+        <p class="text-lg opacity-80">AI 驱动的文本转图像服务</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-sm">亮色</span>
+        <label class="theme-switch">
+          <input type="checkbox" id="themeToggle">
+          <span class="slider"></span>
+        </label>
+        <span class="text-sm">暗色</span>
+      </div>
+    </header>
+
+    <div class="max-w-3xl mx-auto light-glass dark:dark-glass p-4 rounded-xl mb-6 card-hover slide-in-up" style="animation-delay: 0.1s;">
+      <h2 class="text-xl font-semibold mb-3">🔑 API 认证</h2>
+      <div class="flex flex-col md:flex-row gap-3">
+        <input
+          type="password"
+          id="apiKeyInput"
+          class="flex-grow p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 input-focus-effect"
+          placeholder="输入你的 FAL_KEY"
+        />
+        <button
+          id="saveApiKey"
+          class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-5 rounded-lg transition-colors btn-hover-effect"
+        >
+          保存密钥
+        </button>
+      </div>
+      <div id="keyStatus" class="mt-2 text-sm"></div>
+      <p class="text-xs mt-1 opacity-75">API 密钥仅保存在当前浏览器会话中，不会发送到除 fal.ai 以外的任何服务器。</p>
+    </div>
+
+    <div class="max-w-6xl mx-auto light-glass dark:dark-glass p-4 rounded-xl mb-6 card-hover slide-in-up" style="animation-delay: 0.2s;">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xl font-semibold">🕒 历史记录</h2>
+        <button
+          id="clearHistoryBtn"
+          class="text-sm bg-red-500/40 hover:bg-red-500/60 px-3 py-1 rounded-full transition-colors btn-hover-effect"
+        >
+          清空历史
+        </button>
+      </div>
+      <div id="historyRow" class="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+        <div class="text-center text-gray-300 dark:text-gray-500 text-sm italic w-full py-6">暂无历史图片</div>
+      </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto light-glass dark:dark-glass p-5 rounded-xl mb-6 card-hover slide-in-up" style="animation-delay: 0.3s;">
+      <h2 class="text-xl font-semibold mb-4">✨ 生成图像</h2>
+
+      <div class="flex flex-col md:flex-row gap-5">
+        <div class="flex-1">
+          <form id="generationForm" class="space-y-4">
+            <div>
+              <label for="prompt" class="block text-base mb-1">提示词</label>
+              <textarea
+                id="prompt"
+                rows="3"
+                class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 input-focus-effect"
+                placeholder="描述你想生成的图像..."
+              ></textarea>
+            </div>
+
+            <div>
+              <label for="model" class="block text-base mb-1">模型</label>
+              <select
+                id="model"
+                class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              >
+                <option value="fal-ai/flux-pro/new">FLUX.1 - 高质量通用模型</option>
+                <option value="fal-ai/flux-pro/v1.1">FLUX.1.1 Pro - 更快更好的通用模型</option>
+                <option value="fal-ai/flux-pro/v1.1-ultra">FLUX.1.1 Ultra - 更高细节纹理</option>
+                <option value="fal-ai/recraft-v3">Recraft V3 - 适合风格化图像</option>
+                <option value="fal-ai/stable-diffusion-v35-large">SD 3.5 Large - 适合复杂场景</option>
+                <option value="fal-ai/hidream-i1-dev">HiDream-I1 dev</option>
+                <option value="fal-ai/ideogram/v2">Ideogram V2 - 文字和标志设计</option>
+                <option value="fal-ai/imagen3">Imagen 3 - Google高清图像模型</option>
+                <option value="custom">自定义模型...</option> </select>
+              <input
+                type="text"
+                id="customModelInput"
+                class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 input-focus-effect"
+                placeholder="输入自定义模型值，例如: fal-ai/recraft-v3"
+              />
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                id="generateBtn"
+                class="w-full bg-purple-600 hover:bg-purple-700 py-3 px-6 rounded-lg font-bold transition-all duration-300 transform hover:scale-[1.02] btn-hover-effect"
+              >
+                生成图像
+              </button>
+            </div>
+
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <h3 class="text-base font-medium">高级选项</h3>
+                <button
+                  type="button"
+                  id="toggleAdvanced"
+                  class="text-sm bg白/20 dark:bg白/10 hover:bg白/30 dark:hover:bg白/20 px-2 py-1 rounded-full transition-colors"
+                >
+                  显示
+                </button>
+              </div>
+
+              <div id="advancedOptions" class="hidden space-y-3 p-3 bg-white/10 dark:bg-black/40 rounded-lg">
+                <div>
+                  <label for="seed" class="block mb-1">随机种子</label>
+                  <input
+                    type="number"
+                    id="seed"
+                    class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800"
+                    placeholder="留空则随机生成"
+                  />
+                </div>
+
+                <div>
+                  <label for="imageSize" class="block mb-1">图像尺寸</label>
+                  <select
+                    id="imageSize"
+                    class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800"
+                  >
+                    <option value="square_hd">正方形高清</option>
+                    <option value="portrait_16_9">竖向 16:9</option>
+                    <option value="landscape_16_9">横向 16:9</option>
+                    <option value="landscape_4_3">横向 4:3</option>
+                    <option value="custom">自定义尺寸</option>
+                  </select>
+                </div>
+
+                <div id="customSizeContainer" class="hidden">
+                  <div class="flex flex-col md:flex-row gap-3">
+                    <div class="flex-1">
+                      <label for="customWidth" class="block mb-1">自定义宽度</label>
+                      <input
+                        type="number"
+                        id="customWidth"
+                        class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800"
+                        placeholder="宽度（像素）"
+                        value="512"
+                        min="256"
+                        max="2048"
+                      />
+                    </div>
+                    <div class="flex-1">
+                      <label for="customHeight" class="block mb-1">自定义高度</label>
+                      <input
+                        type="number"
+                        id="customHeight"
+                        class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800"
+                        placeholder="高度（像素）"
+                        value="512"
+                        min="256"
+                        max="2048"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="numImages" class="block mb-1">图像数量</label>
+                  <input
+                    type="number"
+                    id="numImages"
+                    class="w-full p-2 rounded-lg text-gray-800 dark:text-gray-200 dark:bg-gray-800"
+                    value="1"
+                    min="1"
+                    max="4"
+                  />
+                </div>
+
+                <div class="transition-all duration-300">
+                  <label for="numInferenceSteps" class="block mb-1">推理步数（默认: 28）</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="numInferenceSteps"
+                      min="1"
+                      max="50"
+                      value="28"
+                    />
+                    <div class="slider-value" id="numInferenceStepsValue">28</div>
+                  </div>
+                </div>
+
+                <div class="transition-all duration-300">
+                  <label for="guidanceScale" class="block mb-1">引导尺度 CFG（默认: 3.5）</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="guidanceScale"
+                      min="1"
+                      max="20"
+                      step="0.1"
+                      value="3.5"
+                    />
+                    <div class="slider-value" id="guidanceScaleValue">3.5</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <label for="rawMode" class="block">自然模式</label>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="rawMode">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <p class="text-xs opacity-75">生成更少处理、更自然的图像效果。</p>
+
+                <div class="flex items-center justify-between">
+                  <label for="syncMode" class="block">同步模式</label>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="syncMode" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <p class="text-xs opacity-75">同步模式会等待图像生成完成后再返回结果，这会增加延迟但可以直接获取图像。</p>
+
+                <div class="flex items-center justify-between">
+                  <label for="enableSafetyChecker" class="block">启用安全检查器</label>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="enableSafetyChecker">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <p class="text-xs opacity-75">安全检查器会过滤掉可能含有不适宜内容的图像。</p>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="flex-1">
+          <div class="bg-white/10 dark:bg-black/40 rounded-lg h-full p-4">
+            <h3 class="text-lg mb-3">结果</h3>
+            <div id="loading" class="hidden flex justify-center items-center py-12">
+              <div class="text-center">
+                <div class="loading-animation mb-3"></div>
+                <p id="loadingStatus" class="text-base">正在处理请求...</p>
+              </div>
+            </div>
+            <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            <div id="errorMessage" class="hidden text-red-300 p-3 bg-red-900/30 rounded-lg mt-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="logsContainer" class="max-w-6xl mx-auto light-glass dark:dark-glass p-4 rounded-xl mb-6 hidden slide-in-up" style="animation-delay: 0.4s;">
+      <h2 class="text-xl font-semibold mb-3">📋 日志</h2>
+      <div id="logsContent" class="logs-container bg-black/20 p-3 rounded-lg overflow-y-auto"></div>
+    </div>
+    <footer class="mt-12 text-center text-sm opacity-75 slide-in-up" style="animation-delay: 0.5s;">
+      
+  
+    </footer>
+  </div>
+
+  <script>
+    // Global variables
+    let historyViewer = null;
+    let resultsViewer = null;
+
+    // --- MOVED: Log functions to global scope ---
+    /**
+     * Adds a log entry to the logs container.
+     * @param {string} message - The log message.
+     * @param {'info'|'warn'|'error'} [level='info'] - The log level.
+     */
+    function addLog(message, level = 'info') {
+        const logsContent = document.getElementById('logsContent');
+        // Ensure logsContent exists before proceeding
+        if (!logsContent) {
+            console.warn("Log container not found yet.");
+            return;
+        }
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry log-${level}`;
+        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logsContent.appendChild(logEntry);
+        // Scroll to the bottom
+        logsContent.scrollTop = logsContent.scrollHeight;
+    }
+
+    /**
+     * Clears all entries from the logs container.
+     */
+    function clearLogs() {
+        const logsContent = document.getElementById('logsContent');
+         // Ensure logsContent exists before proceeding
+        if (logsContent) {
+            logsContent.innerHTML = '';
+        }
+    }
+    // --- END MOVED ---
+
+
+    // Check if Viewer library is loaded correctly
+    function isViewerLoaded() {
+      return typeof Viewer === 'function';
+    }
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log("DOM loaded, initializing application...");
+
+      // Initialize theme
+      initTheme();
+
+      // Initialize history
+      loadImageHistory();
+
+      // Set up clear history button
+      document.getElementById("clearHistoryBtn").addEventListener('click', () => {
+        localStorage.removeItem('falGeneratedImages');
+        document.getElementById('historyRow').innerHTML =
+          '<div class="text-center text-gray-300 dark:text-gray-500 text-sm italic w-full py-6">暂无历史图片</div>';
+
+        // Destroy viewer instance if it exists
+        if (historyViewer) {
+          historyViewer.destroy();
+          historyViewer = null;
+        }
+      });
+
+      // Initialize the main application logic
+      initializeFalApp();
+
+      setupViewerKeybindings(); // 设置 Viewer.js 的 WSAD 快捷键监听器
+
+      const historyRow = document.getElementById('historyRow');
+      if(historyRow) {
+        let targetScrollLeft = historyRow.scrollLeft; // 目标滚动位置
+        let animationFrameId = null; // 存储 requestAnimationFrame ID
+        const easingFactor = 0.15; // 缓动因子
+        let isWheeling = false; // 标记是否由 wheel 事件触发滚动
+        let isManualScrolling = false; // 标记是否是用户手动拖动滚动条
+
+        const smoothScroll = () => {
+          // 如果是用户手动拖动滚动条，则停止动画
+          if (isManualScrolling) {
+              cancelAnimationFrame(animationFrameId);
+              animationFrameId = null;
+              isWheeling = false; // 确保 wheel 状态也重置
+              return;
+          }
+
+          const currentScroll = historyRow.scrollLeft;
+          const diff = targetScrollLeft - currentScroll;
+
+          // 如果差异很小，停止动画并精确设置最终位置
+          if (Math.abs(diff) < 1) {
+            historyRow.scrollLeft = targetScrollLeft;
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+            isWheeling = false; // 动画结束，重置 wheel 状态
+            return;
+          }
+
+          // 计算下一步的滚动位置
+          const step = currentScroll + diff * easingFactor;
+          historyRow.scrollLeft = step;
+
+          // 继续下一帧动画
+          animationFrameId = requestAnimationFrame(smoothScroll);
+        };
+
+        // 监听 wheel 事件以实现平滑滚动
+        historyRow.addEventListener('wheel', (e) => {
+          // 阻止页面默认的垂直滚动行为
+          e.preventDefault();
+          isWheeling = true; // 标记滚动是由 wheel 触发
+          isManualScrolling = false; // wheel 事件发生，不是手动拖动
+
+          // 如果动画正在运行，基于当前实际位置更新目标位置
+          // 否则，从当前位置开始计算
+          targetScrollLeft = historyRow.scrollLeft + e.deltaY;
+
+          // 限制目标位置在有效范围内
+          const maxScrollLeft = historyRow.scrollWidth - historyRow.clientWidth;
+          targetScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScrollLeft));
+
+          // 如果动画没有在运行，启动它
+          if (!animationFrameId) {
+            animationFrameId = requestAnimationFrame(smoothScroll);
+          }
+        }, { passive: false }); // 需要 passive: false 来调用 preventDefault
+
+        // 监听 scroll 事件以检测手动拖动
+        historyRow.addEventListener('scroll', () => {
+          // 如果滚动事件发生，但不是由 wheel 事件动画触发的，
+          // 则认为是用户手动拖动滚动条
+          if (!isWheeling) {
+            isManualScrolling = true; // 标记为手动滚动
+            // 如果此时有 wheel 动画在运行，取消它
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            // 更新 targetScrollLeft 为当前手动滚动到的位置，防止 wheel 事件再次触发时跳跃
+            targetScrollLeft = historyRow.scrollLeft;
+          }
+          // 如果滚动是由 wheel 动画引起的，则在 smoothScroll 函数结束时 isWheeling 会被设为 false
+        });
+
+        // 监听鼠标按下事件，更早地判断手动拖动开始
+        historyRow.addEventListener('mousedown', (e) => {
+            // 判断点击事件是否发生在滚动条上 (近似判断)
+            // offsetX/Y 相对于元素边界，clientHeight/Width 是元素可视区域大小
+            const scrollbarHeight = historyRow.offsetHeight - historyRow.clientHeight; // 估算横向滚动条高度
+            const scrollbarWidth = historyRow.offsetWidth - historyRow.clientWidth; // 估算纵向滚动条宽度 (虽然这里主要是横向)
+
+            // 如果点击位置在估算的滚动条区域内
+            if (e.offsetY >= historyRow.clientHeight && scrollbarHeight > 0 ||
+                e.offsetX >= historyRow.clientWidth && scrollbarWidth > 0)
+            {
+                isManualScrolling = true;
+                isWheeling = false; // 确保 wheel 状态关闭
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+            }
+        });
+
+        // 监听鼠标松开事件，重置手动滚动标记
+        // 使用 window 监听 mouseup，以防鼠标在元素外松开
+        window.addEventListener('mouseup', () => {
+            if (isManualScrolling) {
+                isManualScrolling = false;
+                // 更新 targetScrollLeft，以便下次 wheel 事件从正确位置开始
+                targetScrollLeft = historyRow.scrollLeft;
+            }
+        });
+
+        // 当鼠标离开 historyRow 时，也可能意味着拖动结束
+        historyRow.addEventListener('mouseleave', () => {
+             if (isManualScrolling) {
+                // 不立即重置 isManualScrolling，因为可能还在拖动中鼠标移出去了
+                // mouseup 事件会最终处理
+             }
+        });
+      }
+
+      // Initialize image viewers after a short delay
+      setTimeout(() => {
+        initializeViewers();
+      }, 1000);
+
+      // Initialize sliders to update their display values
+      document.getElementById('numInferenceSteps').addEventListener('input', (e) => {
+        document.getElementById('numInferenceStepsValue').textContent = e.target.value;
+      });
+
+      document.getElementById('guidanceScale').addEventListener('input', (e) => {
+        document.getElementById('guidanceScaleValue').textContent = e.target.value;
+      });
+
+      // Custom image size setup
+      const imageSizeSelect = document.getElementById('imageSize');
+      imageSizeSelect.addEventListener('change', (e) => {
+        const customSizeContainer = document.getElementById('customSizeContainer');
+        if (e.target.value === 'custom') {
+          customSizeContainer.classList.remove('hidden');
+          // Add fade-in animation
+          customSizeContainer.classList.add('fade-in');
+        } else {
+          // Hide (no fade-out needed as it's simple hide)
+          customSizeContainer.classList.add('hidden');
+        }
+      });
+
+      // Advanced options toggle animation
+      document.getElementById('toggleAdvanced').addEventListener('click', (e) => {
+        const advancedOptions = document.getElementById('advancedOptions');
+        const isHidden = advancedOptions.classList.contains('hidden');
+
+        if (isHidden) {
+          advancedOptions.classList.remove('hidden');
+          // Add fade-in animation
+          advancedOptions.classList.add('fade-in');
+          e.target.textContent = '隐藏';
+        } else {
+          // Use setTimeout for fade-out effect before hiding
+          advancedOptions.style.opacity = '0';
+          advancedOptions.style.transition = 'opacity 0.3s';
+
+          setTimeout(() => {
+            advancedOptions.classList.add('hidden');
+            advancedOptions.style.opacity = ''; // Reset opacity
+            advancedOptions.style.transition = ''; // Reset transition
+          }, 300);
+
+          e.target.textContent = '显示';
+        }
+      });
+
+      // --- Added: Custom model input logic ---
+      const modelSelect = document.getElementById('model');
+      const customModelInput = document.getElementById('customModelInput');
+
+      modelSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'custom') {
+          customModelInput.classList.add('visible'); // Use 'visible' class to trigger transition
+        } else {
+          customModelInput.classList.remove('visible');
+        }
+      });
+      // --- End: Custom model input logic ---
+
+      loadUserSettings(); // 加载用户设置
+      setupSettingsListeners(); // 设置监听器
+    });
+
+    // Initialize theme based on localStorage or preference
+    function initTheme() {
+      const themeToggle = document.getElementById('themeToggle');
+
+      // Check theme preference in localStorage
+      const darkMode = localStorage.getItem('darkMode') === 'true';
+
+      // Set initial state
+      if (darkMode) {
+        document.body.classList.remove('light');
+        document.body.classList.add('dark');
+        themeToggle.checked = true;
+      } else {
+        document.body.classList.add('light');
+        document.body.classList.remove('dark');
+        themeToggle.checked = false;
+      }
+
+      // Add toggle event listener
+      themeToggle.addEventListener('change', function() {
+        // Add page transition animation
+        document.body.style.opacity = '0.8';
+        document.body.style.transition = 'opacity 0.3s ease';
+
+        setTimeout(() => {
+          if (this.checked) {
+            document.body.classList.remove('light');
+            document.body.classList.add('dark');
+            localStorage.setItem('darkMode', 'true');
+          } else {
+            document.body.classList.add('light');
+            document.body.classList.remove('dark');
+            localStorage.setItem('darkMode', 'false');
+          }
+
+          // Restore visibility after transition
+          setTimeout(() => {
+            document.body.style.opacity = '1';
+          }, 50);
+        }, 300);
+      });
+    }
+
+    // Initialize all image viewers (Viewer.js)
+    function initializeViewers() {
+      console.log("Initializing image viewers...");
+
+      // Check if Viewer.js is loaded
+      if (!isViewerLoaded()) {
+        console.error("Viewer.js not loaded, image viewing functionality will be unavailable.");
+        return;
+      }
+
+      try {
+        // Initialize history image viewer
+        const historyElement = document.getElementById('historyRow');
+        if (historyElement && historyElement.querySelector('img')) {
+          console.log("Initializing history image viewer");
+
+          // Destroy existing viewer if present
+          if (historyViewer) {
+            historyViewer.destroy();
+          }
+
+          // Create new viewer
+          historyViewer = new Viewer(historyElement, {
+            inline: false, // Show viewer on click, not inline
+            button: true, // Show fullscreen button
+            navbar: false, // Hide thumbnail navigation
+            title: false, // Hide title
+            toolbar: { // Customize toolbar buttons
+              zoomIn: 1,
+              zoomOut: 1,
+              oneToOne: 1,
+              reset: 1,
+              prev: 1,
+              next: 1,
+              rotateLeft: 1,
+              rotateRight: 1,
+              flipHorizontal: 1,
+              flipVertical: 1,
+            },
+            keyboard: true,
+            viewed() {
+              console.log('History image viewer initialized');
+            }
+          });
+        }
+
+        // Initialize results image viewer
+        const resultsElement = document.getElementById('results');
+        if (resultsElement && resultsElement.querySelector('img')) {
+          console.log("Initializing results image viewer");
+
+          // Destroy existing viewer if present
+          if (resultsViewer) {
+            resultsViewer.destroy();
+          }
+
+          // Create new viewer
+          resultsViewer = new Viewer(resultsElement, {
+            inline: false,
+            button: true,
+            navbar: false,
+            title: false,
+            toolbar: {
+              zoomIn: 1,
+              zoomOut: 1,
+              oneToOne: 1,
+              reset: 1,
+              prev: 1,
+              next: 1,
+              rotateLeft: 1,
+              rotateRight: 1,
+              flipHorizontal: 1,
+              flipVertical: 1,
+            },
+            keyboard: true,
+            viewed() {
+              console.log('Results image viewer initialized');
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error initializing viewers:", error);
+      }
+    }
+
+     // --- 新增：为 Viewer.js 添加 WSAD 快捷键 ---
+    function setupViewerKeybindings() {
+      document.addEventListener('keydown', (event) => {
+        // 检查是否有 Viewer 实例处于活动状态
+        const activeViewer = (historyViewer && historyViewer.isShown) ? historyViewer :
+                             (resultsViewer && resultsViewer.isShown) ? resultsViewer : null;
+
+        if (!activeViewer) {
+          return; // 如果没有活动的 Viewer，则不执行任何操作
+        }
+
+        let handled = false;
+        switch (event.key.toLowerCase()) {
+          case 'w': // 模拟向上箭头 (放大)
+            activeViewer.zoom(0.1);
+            handled = true;
+            break;
+          case 's': // 模拟向下箭头 (缩小)
+            activeViewer.zoom(-0.1);
+            handled = true;
+            break;
+          case 'a': // 模拟向左箭头 (上一张)
+            activeViewer.prev();
+            handled = true;
+            break;
+          case 'd': // 模拟向右箭头 (下一张)
+            activeViewer.next();
+            handled = true;
+            break;
+        }
+
+        if (handled) {
+          event.preventDefault(); // 阻止默认行为 (例如页面滚动)
+        }
+      });
+      console.log("WSAD viewer keybindings setup.");
+    }
+
+    // --- Modified: Save image to history, including model info ---
+    /**
+     * Saves generated images to localStorage history.
+     * @param {Array<object>} images - Array of image objects from API response.
+     * @param {string} prompt - The prompt used for generation.
+     * @param {string} modelId - The model ID used for generation.
+     */
+    function saveToHistory(images, prompt, modelId) {
+      // Get existing history or initialize an empty array
+      let history = JSON.parse(localStorage.getItem('falGeneratedImages') || '[]');
+
+      // Add new images
+      const timestamp = new Date().toISOString();
+      const newImages = images.map(img => ({
+        url: img.url,
+        prompt,
+        timestamp,
+        model: modelId // Save the currently used model ID
+      }));
+
+      // Add to the beginning of the array
+      history = [...newImages, ...history];
+
+      // Limit history to a maximum of 50 images
+      // if (history.length > 50) {
+      //   history = history.slice(0, 50);
+      // }
+
+      // Save back to localStorage
+      localStorage.setItem('falGeneratedImages', JSON.stringify(history));
+
+      // Update history display
+      loadImageHistory();
+
+      // Re-initialize viewers after a short delay to allow DOM update
+      setTimeout(() => {
+        initializeViewers();
+      }, 500);
+    }
+    // --- End modification ---
+    let currentTooltip = null;
+    let hideTooltipTimer = null;
+
+    function deleteHistoryImage(index) {
+      // 1. 更新 localStorage
+      const history = JSON.parse(localStorage.getItem('falGeneratedImages') || '[]');
+      history.splice(index, 1);
+      localStorage.setItem('falGeneratedImages', JSON.stringify(history));
+
+      // 2. 只移除对应的 DOM 节点
+      const historyRow = document.getElementById('historyRow');
+      const items = historyRow.querySelectorAll('.history-item');
+      const target = items[index];
+      if (target) {
+        // 如果有 tooltip 节点，也一并清理
+        const tooltip = document.querySelector('body > .fixed.z-50');
+        tooltip && tooltip.remove();
+        target.remove();
+      }
+
+      // 3. （可选）重新调整 Viewer.js
+      if (historyViewer) {
+        historyViewer.update(); // 或者 destroy/reinit
+      }
+    }
+
+    // Load and display image history from localStorage
+    function loadImageHistory() {
+      const historyRow = document.getElementById('historyRow');
+      const history = JSON.parse(localStorage.getItem('falGeneratedImages') || '[]');
+
+      if (history.length === 0) {
+        historyRow.innerHTML = '<div class="text-center text-gray-300 dark:text-gray-500 text-sm italic w-full py-6">暂无历史图片</div>';
+        return;
+      }
+
+      // Clear and populate the history row
+      historyRow.innerHTML = '';
+
+      history.forEach((item, index) => {
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'flex-shrink-0 relative fade-in history-item';
+        // Add staggered animation delay
+        imageContainer.style.animationDelay = `${index * 0.05}s`;
+
+        const image = document.createElement('img');
+        image.src = item.url;
+        // Display model and prompt in alt text and tooltip
+        image.alt = `模型: ${item.model || '未知'} | 提示: ${item.prompt.substring(0, 20)}...`;
+        image.className = 'history-image';
+        image.loading = 'lazy'; // Lazy load images
+        image.setAttribute('data-original', item.url); // For Viewer.js
+
+        // Add hover tooltip
+        const tooltip = document.createElement('div');
+        // 将tooltip定位在图片下方而不是上方，增加z-index确保显示在最上层
+        tooltip.className = 'fixed z-50 p-2 bg-black/90 text-white text-xs rounded shadow-lg border border-white/20 pointer-events-none opacity-0 transition-opacity duration-200';
+        tooltip.style.maxWidth = '250px';
+        tooltip.style.wordBreak = 'break-word';
+        tooltip.innerHTML = `
+          <p class="mb-1"><strong>模型:</strong> ${item.model || '未知'}</p>
+          <p class="mb-1"><strong>提示:</strong> ${item.prompt}</p>
+          <p><strong>时间:</strong> ${new Date(item.timestamp).toLocaleString()}</p>
+        `;
+        document.body.appendChild(tooltip);
+
+        // --- Tooltip Logic Start ---
+        const showDelay = 150; // Optional: Delay before showing tooltip
+        const hideDelay = 300; // Delay before hiding tooltip
+
+        let showTooltipTimer = null;
+
+        imageContainer.addEventListener('mouseenter', (e) => {
+          // Clear any pending hide operations for other tooltips
+          clearTimeout(hideTooltipTimer);
+          // Immediately hide any other currently visible tooltip
+          if (currentTooltip && currentTooltip !== tooltip) {
+            currentTooltip.classList.remove('opacity-100');
+            currentTooltip.classList.add('opacity-0');
+            // Allow interaction with the tooltip content
+            currentTooltip.style.pointerEvents = 'none';
+            currentTooltip = null;
+          }
+
+          // Clear any pending show for this tooltip (if mouse quickly enters/leaves/re-enters)
+          clearTimeout(showTooltipTimer);
+
+          // Optional: Add a small delay before showing
+          showTooltipTimer = setTimeout(() => {
+            const rect = imageContainer.getBoundingClientRect(); // Use imageContainer for positioning
+            tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+            tooltip.style.top = `${rect.bottom + 8}px`; // Increased gap slightly
+
+            // Ensure tooltip doesn't go off-screen horizontally
+            const tooltipRect = tooltip.getBoundingClientRect(); // Get rect *after* setting position
+            const viewportWidth = window.innerWidth;
+            if (tooltipRect.right > viewportWidth - 10) { // Add small margin
+              tooltip.style.left = `${viewportWidth - tooltip.offsetWidth - 10}px`;
+            }
+            if (tooltipRect.left < 10) { // Add small margin
+              tooltip.style.left = '10px';
+            }
+            // Ensure tooltip doesn't go off-screen vertically (bottom) - less common but possible
+            const viewportHeight = window.innerHeight;
+            if (tooltipRect.bottom > viewportHeight - 10) {
+              tooltip.style.top = `${rect.top - tooltip.offsetHeight - 8}px`; // Move above image if no space below
+            }
+
+
+            tooltip.classList.remove('opacity-0');
+            tooltip.classList.add('opacity-100');
+            // Allow interaction ONLY when visible
+            tooltip.style.pointerEvents = 'auto';
+            currentTooltip = tooltip; // Set this as the current tooltip
+          }, showDelay);
+        });
+
+        imageContainer.addEventListener('mouseleave', () => {
+          // Clear pending show timer if mouse leaves before it triggers
+          clearTimeout(showTooltipTimer);
+          // Start timer to hide this tooltip
+          clearTimeout(hideTooltipTimer); // Clear previous hide timer if any
+          hideTooltipTimer = setTimeout(() => {
+            if (tooltip) { // Check if tooltip still exists
+              tooltip.classList.remove('opacity-100');
+              tooltip.classList.add('opacity-0');
+              tooltip.style.pointerEvents = 'none'; // Disable interaction when hidden
+              if (currentTooltip === tooltip) {
+                currentTooltip = null; // Clear global reference if it's this one hiding
+              }
+            }
+          }, hideDelay);
+        });
+
+        // Keep tooltip visible if mouse enters the tooltip itself
+        tooltip.addEventListener('mouseenter', () => {
+          clearTimeout(hideTooltipTimer); // Cancel the hide timer
+        });
+
+        // Hide tooltip if mouse leaves the tooltip area
+        tooltip.addEventListener('mouseleave', () => {
+          clearTimeout(hideTooltipTimer); // Clear previous hide timer
+          hideTooltipTimer = setTimeout(() => {
+            if (tooltip) { // Check if tooltip still exists
+                tooltip.classList.remove('opacity-100');
+                tooltip.classList.add('opacity-0');
+                tooltip.style.pointerEvents = 'none';
+                if (currentTooltip === tooltip) {
+                    currentTooltip = null;
+                }
+            }
+          }, hideDelay);
+        });
+        // --- Tooltip Logic End ---
+
+        // Add delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '×';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.title = '删除图片';
+        deleteBtn.addEventListener('click', () => {
+          const historyRow = document.getElementById('historyRow');
+          const items = Array.from(historyRow.querySelectorAll('.history-item'));
+          const currentIndex = items.indexOf(imageContainer);
+          if (currentIndex !== -1) {
+            deleteHistoryImage(currentIndex);
+          }
+        });
+        imageContainer.appendChild(deleteBtn);
+
+        imageContainer.appendChild(image);
+        historyRow.appendChild(imageContainer);
+      });
+    }
+
+    // Create a direct API implementation (no external library)
+    function createDirectApiImplementation() {
+      console.log("Creating API implementation");
+
+      return {
+        _key: null, // Stores the API key
+        /**
+         * Configures the API key.
+         * @param {object} options - Configuration options.
+         * @param {string} options.credentials - The API key.
+         * @returns {boolean} True if configuration was successful.
+         */
+        config(options) {
+          if (options && options.credentials) {
+            this._key = options.credentials;
+            return true;
+          }
+          return false;
+        },
+        /**
+         * Runs a synchronous request to the Fal API.
+         * @param {string} modelId - The ID of the model to run.
+         * @param {object} options - Request options.
+         * @param {object} options.input - The input data for the model.
+         * @returns {Promise<object>} The API response.
+         */
+        async run(modelId, options) {
+            if (!this._key) {
+                throw new Error("API密钥未配置");
+            }
+
+            const apiUrl = `https://fal.run/${modelId}`;
+            console.log("Running synchronous request to:", apiUrl);
+            addLog(`INFO: Starting synchronous request to ${modelId}...`, 'info');
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Key ${this._key}`,
+                    'Content-Type': 'application/json',
+                    // 'mode': 'cors' // 'mode' is not a standard header, removed
+                },
+                body: JSON.stringify(options.input || {})
+            }).catch(error => {
+                // Handle potential CORS or network errors
+                if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+                    throw new Error('CORS错误: 浏览器阻止了请求。请检查浏览器控制台获取详细信息。');
+                }
+                throw error; // Re-throw other errors
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                addLog(`ERROR: API request failed: ${response.status} ${errorText}`, 'error');
+                throw new Error(`API请求失败: ${response.status} ${errorText}`);
+            }
+
+            const result = await response.json();
+            addLog(`INFO: Synchronous request successful, received result.`, 'info');
+            console.log("Synchronous result:", result);
+            return result;
+        },
+        /**
+         * Subscribes to an asynchronous request using the Fal queue API.
+         * @param {string} modelId - The ID of the model to run.
+         * @param {object} options - Request options.
+         * @param {object} options.input - The input data for the model.
+         * @returns {Promise<object>} The final API response after polling.
+         */
+        async subscribe(modelId, options) {
+          if (!this._key) {
+            throw new Error("API密钥未配置");
+          }
+
+          try {
+            // Submit the request to the queue first
+            console.log("Submitting request to queue...");
+            addLog(`INFO: Starting asynchronous request to ${modelId}...`, 'info');
+            const queueUrl = `https://queue.fal.run/${modelId}`;
+            console.log("Queue URL:", queueUrl);
+
+            const submitResponse = await fetch(queueUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Key ${this._key}`,
+                'Content-Type': 'application/json',
+                // 'mode': 'cors' // 'mode' is not a standard header, removed
+              },
+              body: JSON.stringify(options.input || {})
+            }).catch(error => {
+              if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+                throw new Error('CORS错误: 浏览器阻止了请求。请检查浏览器控制台获取详细信息。');
+              }
+              throw error;
+            });
+
+            if (!submitResponse.ok) {
+              const errorText = await submitResponse.text();
+              addLog(`ERROR: Queue submission failed: ${submitResponse.status} ${errorText}`, 'error');
+              throw new Error(`API请求失败: ${submitResponse.status} ${errorText}`);
+            }
+
+            const queueData = await submitResponse.json();
+            addLog(`INFO: Request submitted to queue, Request ID: ${queueData.request_id}`, 'info');
+            console.log("Queue response:", queueData);
+
+            // Use the URLs returned in the response
+            const { request_id, status_url, response_url } = queueData;
+
+            // Poll until completion
+            const self = this; // Reference 'this' for use inside poll function
+            let statusData;
+            let attempts = 0;
+            const maxAttempts = 60; // Poll max 60 times (approx 5 minutes)
+            const pollInterval = 5000; // Poll every 5 seconds
+
+            return new Promise((resolve, reject) => {
+              const poll = async () => {
+                attempts++;
+                if (attempts > maxAttempts) {
+                  addLog(`ERROR: Request timed out (exceeded ${maxAttempts * pollInterval / 1000} seconds)`, 'error');
+                  reject(new Error("请求超时"));
+                  return;
+                }
+
+                try {
+                  console.log(`Polling status (${attempts}/${maxAttempts}):`, status_url);
+                  addLog(`INFO: Polling status (${attempts}/${maxAttempts})...`, 'info');
+                  const statusResponse = await fetch(status_url, {
+                    headers: {
+                      'Authorization': `Key ${self._key}`,
+                      // 'mode': 'cors' // 'mode' is not a standard header, removed
+                    }
+                  });
+
+                  if (!statusResponse.ok) {
+                    const errorText = await statusResponse.text();
+                    addLog(`ERROR: Failed to get status: ${statusResponse.status} ${errorText}`, 'error');
+                    // Continue polling, might be a temporary issue
+                    setTimeout(poll, pollInterval);
+                    return;
+                  }
+
+                  statusData = await statusResponse.json();
+                  console.log("Status data:", statusData);
+
+                  // Update loading status text
+                  const loadingStatus = document.getElementById('loadingStatus');
+                  if (loadingStatus) {
+                    loadingStatus.textContent = `处理中... ${statusData.progress ? statusData.progress.current + '/' + statusData.progress.total : ''}`;
+                  }
+
+                  // Log detailed logs if available
+                  if (statusData.logs && statusData.logs.length > 0) {
+                      // Only log new messages to avoid repetition
+                      const lastLoggedIndex = parseInt(loadingStatus.dataset.lastLogIndex || '-1');
+                      statusData.logs.slice(lastLoggedIndex + 1).forEach((log, index) => {
+                          addLog(`LOG: ${log.message}`, 'info');
+                          loadingStatus.dataset.lastLogIndex = (lastLoggedIndex + 1 + index).toString();
+                      });
+                  }
+
+
+                  if (statusData.status === 'COMPLETED') {
+                    addLog(`INFO: Request completed! Fetching results...`, 'info');
+                    // Get the final result
+                    const resultResponse = await fetch(response_url, {
+                      headers: {
+                        'Authorization': `Key ${self._key}`,
+                        // 'mode': 'cors' // 'mode' is not a standard header, removed
+                      }
+                    });
+
+                    if (!resultResponse.ok) {
+                      const errorText = await resultResponse.text();
+                       addLog(`ERROR: Failed to get result: ${resultResponse.status} ${errorText}`, 'error');
+                      reject(new Error(`获取结果失败: ${resultResponse.status} ${errorText}`));
+                      return;
+                    }
+
+                    const result = await resultResponse.json();
+                    addLog(`INFO: Successfully fetched result.`, 'info');
+                    console.log("Final result:", result);
+                    resolve(result); // Return the result
+
+                  } else if (statusData.status === 'FAILED' || statusData.status === 'ERROR') {
+                    addLog(`ERROR: Request failed: ${statusData.error ? statusData.error.message : '未知错误'}`, 'error');
+                    reject(new Error(`请求失败: ${statusData.error ? statusData.error.message : '未知错误'}`));
+                  } else {
+                    // Continue polling
+                    setTimeout(poll, pollInterval);
+                  }
+                } catch (error) {
+                  console.error("Polling error:", error);
+                  addLog(`ERROR: Error during polling: ${error.message}`, 'error');
+                  // If it's a CORS error, reject immediately
+                  if (error.message.includes('CORS')) {
+                      reject(new Error('CORS错误: 浏览器阻止了轮询请求。'));
+                  } else {
+                      // For other errors, retry a few times
+                      if (attempts <= 3) { // Allow retries for network errors
+                          setTimeout(poll, pollInterval * 2); // Increase wait time
+                      } else {
+                          reject(error); // Reject after multiple failed attempts
+                      }
+                  }
+                }
+              };
+
+              // Initial poll
+              // Reset last log index before starting polling
+              const loadingStatus = document.getElementById('loadingStatus');
+              if(loadingStatus) loadingStatus.dataset.lastLogIndex = '-1';
+              setTimeout(poll, pollInterval);
+            });
+
+          } catch (error) {
+            console.error("API call failed:", error);
+            addLog(`ERROR: API call failed: ${error.message}`, 'error');
+            throw error; // Re-throw the error
+          }
+        }
+      };
+    }
+
+    // Initialize the main Fal application logic
+    function initializeFalApp() {
+      // Get references to DOM elements
+      const apiKeyInput = document.getElementById('apiKeyInput');
+      const saveApiKey = document.getElementById('saveApiKey');
+      const keyStatus = document.getElementById('keyStatus');
+      const generationForm = document.getElementById('generationForm');
+      const promptInput = document.getElementById('prompt');
+      const modelSelect = document.getElementById('model');
+      const customModelInput = document.getElementById('customModelInput'); // Get custom model input
+      const seedInput = document.getElementById('seed');
+      const imageSizeSelect = document.getElementById('imageSize');
+      const customWidthInput = document.getElementById('customWidth');
+      const customHeightInput = document.getElementById('customHeight');
+      const numImagesInput = document.getElementById('numImages');
+      const numInferenceStepsInput = document.getElementById('numInferenceSteps');
+      const guidanceScaleInput = document.getElementById('guidanceScale');
+      const rawModeInput = document.getElementById('rawMode'); // 获取自然模式开关引用
+      const syncModeInput = document.getElementById('syncMode');
+      const enableSafetyCheckerInput = document.getElementById('enableSafetyChecker');
+      const generateBtn = document.getElementById('generateBtn');
+      const loadingDiv = document.getElementById('loading');
+      const loadingStatus = document.getElementById('loadingStatus');
+      const resultsDiv = document.getElementById('results');
+      const errorMessageDiv = document.getElementById('errorMessage');
+
+      // Create API instance
+      const fal = createDirectApiImplementation();
+
+      // Load saved API Key from sessionStorage
+      const savedKey = sessionStorage.getItem('falApiKey');
+      if (savedKey) {
+        apiKeyInput.value = savedKey;
+        const configured = fal.config({ credentials: savedKey });
+        keyStatus.textContent = configured ? '✅ 密钥已加载' : '❌ 密钥配置失败';
+        keyStatus.className = configured ? 'mt-2 text-sm text-green-300' : 'mt-2 text-sm text-red-300';
+      } else {
+        keyStatus.textContent = '🔑 请输入并保存您的API密钥';
+        keyStatus.className = 'mt-2 text-sm text-yellow-300';
+      }
+
+      // Save API Key to sessionStorage
+      saveApiKey.addEventListener('click', () => {
+        const apiKey = apiKeyInput.value.trim();
+        if (apiKey) {
+          sessionStorage.setItem('falApiKey', apiKey);
+          const configured = fal.config({ credentials: apiKey });
+          keyStatus.textContent = configured ? '✅ 密钥已保存' : '❌ 密钥配置失败';
+          keyStatus.className = configured ? 'mt-2 text-sm text-green-300' : 'mt-2 text-sm text-red-300';
+          addLog('INFO: API key saved to session storage.', 'info');
+        } else {
+          sessionStorage.removeItem('falApiKey');
+          fal.config({ credentials: null }); // Clear configuration
+          keyStatus.textContent = '🔑 请输入并保存您的API密钥';
+          keyStatus.className = 'mt-2 text-sm text-yellow-300';
+          addLog('WARN: API key cleared.', 'warn');
+        }
+      });
+
+      // Handle form submission
+      generationForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); // Prevent default form submission
+
+        // Check if API Key is configured
+        if (!fal._key) {
+          showError("请先输入并保存您的API密钥。");
+          addLog('ERROR: API key not configured, cannot generate image.', 'error');
+          return;
+        }
+
+        // Get form data
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+          showError("请输入提示词。");
+          addLog('WARN: Prompt is empty.', 'warn');
+          return;
+        }
+
+        // --- Modified: Get model ID ---
+        let modelId = modelSelect.value;
+        if (modelId === 'custom') {
+          modelId = customModelInput.value.trim();
+          if (!modelId) {
+            showError("请输入自定义模型的值。");
+            addLog('WARN: Custom model selected but no value entered.', 'warn');
+            return;
+          }
+           // Simple validation for format (optional)
+          if (!modelId.includes('/')) {
+              showError("自定义模型值格式通常为 'username/model-name'。");
+              addLog('WARN: Custom model value format might be incorrect.', 'warn');
+              return;
+          }
+        }
+        // --- End modification ---
+
+        const seed = seedInput.value ? parseInt(seedInput.value) : null;
+        const imageSize = imageSizeSelect.value;
+        // 限制图像数量最大为4
+        let numImages = parseInt(numImagesInput.value) || 1;
+        if (numImages > 4) {
+          numImages = 4;
+          numImagesInput.value = "4"; // 更新输入框的显示值
+          addLog('WARN: 图像数量已被限制为最大值4', 'warn');
+        }
+        const numInferenceSteps = parseInt(numInferenceStepsInput.value) || 28;
+        const guidanceScale = parseFloat(guidanceScaleInput.value) || 3.5;
+        const rawMode = rawModeInput.checked; // 获取自然模式状态
+        const syncMode = syncModeInput.checked;
+        const enableSafetyChecker = enableSafetyCheckerInput.checked;
+
+        // 在发送API请求前保存当前配置
+        saveUserSettings();
+        // addLog('INFO: 当前配置已保存，刷新页面后将自动还原', 'info');
+
+        // Build API input parameters
+        const input = {
+          prompt: prompt,
+          num_images: numImages,
+          num_inference_steps: numInferenceSteps,
+          guidance_scale: guidanceScale,
+          enable_safety_checker: enableSafetyChecker,
+          raw: rawMode, // 添加自然模式参数
+        };
+
+        // Add safety_tolerance when safety checker is disabled
+        if (enableSafetyChecker === false) {
+          input.safety_tolerance = "6";
+        }
+
+        // Add seed if provided and valid
+        if (seed !== null && !isNaN(seed)) {
+          input.seed = seed;
+        }
+
+        // Add image dimensions
+        if (imageSize === 'custom') {
+            const width = parseInt(customWidthInput.value);
+            const height = parseInt(customHeightInput.value);
+            if (width && height && width >= 256 && width <= 2048 && height >= 256 && height <= 2048) {
+                input.width = width;
+                input.height = height;
+                
+                // 计算自定义尺寸的宽高比
+                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b); // 计算最大公约数
+                const divisor = gcd(width, height);
+                const aspectW = width / divisor;
+                const aspectH = height / divisor;
+                
+                // 如果计算出的比例在允许的范围内，则使用它
+                if (aspectW <= 21 && aspectH <= 21) {
+                    input.aspect_ratio = `${aspectW}:${aspectH}`;
+                    addLog(`INFO: Using calculated aspect ratio: ${input.aspect_ratio}`, 'info');
+                }
+            } else {
+                showError("自定义宽度和高度必须在 256 到 2048 之间。");
+                addLog('WARN: Invalid custom dimensions.', 'warn');
+                return;
+            }
+        } else {
+            // 根据预设尺寸设置 aspect_ratio
+            const aspectRatioMap = {
+                'square_hd': '1:1',
+                'portrait_16_9': '9:16', // 竖向 16:9 实际上是 9:16
+                'landscape_16_9': '16:9',
+                'landscape_4_3': '4:3'
+            };
+            
+            if (aspectRatioMap[imageSize]) {
+                input.aspect_ratio = aspectRatioMap[imageSize];
+                addLog(`INFO: Using preset aspect ratio: ${input.aspect_ratio}`, 'info');
+            }
+            
+            if (imageSize !== 'square_hd') { // square_hd is often default, no need to specify
+                input.image_size = imageSize;
+            }
+        }
+
+
+        // Clear old results and errors, show loading indicator
+        resultsDiv.innerHTML = '';
+        errorMessageDiv.classList.add('hidden');
+        errorMessageDiv.textContent = '';
+        loadingDiv.classList.remove('hidden');
+        loadingStatus.textContent = '正在处理请求...';
+        generateBtn.disabled = true;
+        generateBtn.textContent = '生成中...';
+        // clearLogs(); // Clear previous logs
+        document.getElementById('logsContainer').classList.remove('hidden'); // Show log container
+
+        addLog(`INFO: Starting image generation... Model: ${modelId}, Mode: ${syncMode ? 'Sync' : 'Async'}`, 'info');
+        addLog(`INFO: Parameters: ${JSON.stringify(input)}`, 'info');
+
+
+        try {
+          let result;
+          // Choose API method based on syncMode
+          if (syncMode) {
+            result = await fal.run(modelId, { input });
+          } else {
+            result = await fal.subscribe(modelId, { input });
+          }
+
+
+          console.log("API Result:", result);
+
+          // Process the result
+          if (result && result.images && result.images.length > 0) {
+            displayResults(result.images);
+            saveToHistory(result.images, prompt, modelId); // Pass modelId to history
+            addLog(`INFO: Successfully generated ${result.images.length} image(s).`, 'info');
+          } else {
+            // Check for error messages or unsafe content flags
+            if (result && result.error) {
+                showError(`生成失败: ${result.error.message || JSON.stringify(result.error)}`);
+                addLog(`ERROR: Generation failed: ${result.error.message || JSON.stringify(result.error)}`, 'error');
+            } else if (result && result.has_nsfw_concepts && result.has_nsfw_concepts.some(flag => flag === true)) {
+                showError("生成的内容可能包含不适宜信息，已被安全检查器阻止。");
+                addLog('WARN: Inappropriate content detected, generation blocked.', 'warn');
+            } else {
+                showError("API 返回了空结果或无效响应。");
+                addLog('ERROR: API returned empty or invalid response.', 'error');
+                console.error("Invalid API response:", result);
+            }
+          }
+        } catch (error) {
+          console.error("Error during generation:", error);
+          showError(`发生错误: ${error.message}`);
+          // Error logging is handled within the API implementation or catch block
+        } finally {
+          // Hide loading indicator and re-enable button
+          loadingDiv.classList.add('hidden');
+          generateBtn.disabled = false;
+          generateBtn.textContent = '生成图像';
+        }
+      });
+
+      // Display results in the results area
+      function displayResults(images) {
+        resultsDiv.innerHTML = ''; // Clear existing results
+        images.forEach((image, index) => {
+          const container = document.createElement('div');
+          container.className = 'image-container slide-in-right'; // Add animation
+          container.style.animationDelay = `${index * 0.1}s`; // Stagger animation
+
+          const imgElement = document.createElement('img');
+          imgElement.src = image.url;
+          imgElement.alt = `生成的图片 ${index + 1}`;
+          imgElement.className = 'w-full h-auto object-cover rounded-lg';
+          imgElement.loading = 'lazy';
+          imgElement.setAttribute('data-original', image.url); // For viewer.js
+
+          // Add download button
+          const downloadBtn = document.createElement('a');
+          downloadBtn.href = image.url;
+          downloadBtn.download = `fal_generated_${Date.now()}_${index}.png`; // Suggest filename
+          downloadBtn.className = 'absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70 transition-colors text-xs';
+          downloadBtn.innerHTML = '⬇️'; // Download icon
+          downloadBtn.title = '下载图片';
+
+          container.appendChild(imgElement);
+          container.appendChild(downloadBtn);
+          resultsDiv.appendChild(container);
+        });
+
+        // Re-initialize results image viewer
+        setTimeout(() => {
+          initializeViewers();
+        }, 500);
+      }
+
+      // Display error messages
+      function showError(message) {
+        errorMessageDiv.textContent = message;
+        errorMessageDiv.classList.remove('hidden');
+        errorMessageDiv.classList.add('fade-in'); // Add fade-in effect
+      }
+
+      // NOTE: addLog and clearLogs are now defined globally above.
+
+      // 保存用户设置到 localStorage
+      function saveUserSettings() {
+        const settings = {
+          model: modelSelect.value,
+          customModel: customModelInput.value,
+          imageSize: imageSizeSelect.value,
+          customWidth: customWidthInput.value,
+          customHeight: customHeightInput.value,
+          numImages: numImagesInput.value,
+          numInferenceSteps: numInferenceStepsInput.value,
+          guidanceScale: guidanceScaleInput.value,
+          rawMode: rawModeInput.checked, // 保存自然模式设置
+          syncMode: syncModeInput.checked,
+          enableSafetyChecker: enableSafetyCheckerInput.checked
+        };
+        localStorage.setItem('falUserSettings', JSON.stringify(settings));
+        console.log('Settings saved:', settings);
+      }
+
+      // 加载用户设置
+      function loadUserSettings() {
+        try {
+          const settings = JSON.parse(localStorage.getItem('falUserSettings'));
+          if (!settings) return;
+          
+          console.log('Loading saved settings:', settings);
+          
+          // 恢复选择的模型
+          if (settings.model) {
+            modelSelect.value = settings.model;
+            if (settings.model === 'custom' && settings.customModel) {
+              customModelInput.value = settings.customModel;
+              customModelInput.classList.add('visible');
+            }
+          }
+          
+          // 恢复图像尺寸设置
+          if (settings.imageSize) {
+            imageSizeSelect.value = settings.imageSize;
+            if (settings.imageSize === 'custom') {
+              const customSizeContainer = document.getElementById('customSizeContainer');
+              customSizeContainer.classList.remove('hidden');
+              
+              if (settings.customWidth) customWidthInput.value = settings.customWidth;
+              if (settings.customHeight) customHeightInput.value = settings.customHeight;
+            }
+          }
+          
+          // 恢复其他数值设置
+          if (settings.numImages) numImagesInput.value = settings.numImages;
+          if (settings.numInferenceSteps) {
+            numInferenceStepsInput.value = settings.numInferenceSteps;
+            document.getElementById('numInferenceStepsValue').textContent = settings.numInferenceSteps;
+          }
+          if (settings.guidanceScale) {
+            guidanceScaleInput.value = settings.guidanceScale;
+            document.getElementById('guidanceScaleValue').textContent = settings.guidanceScale;
+          }
+          
+          // 恢复开关状态
+          if (settings.rawMode !== undefined) rawModeInput.checked = settings.rawMode;
+          if (settings.syncMode !== undefined) syncModeInput.checked = settings.syncMode;
+          if (settings.enableSafetyChecker !== undefined) enableSafetyCheckerInput.checked = settings.enableSafetyChecker;
+          
+        } catch (error) {
+          console.error('Error loading user settings:', error);
+        }
+      }
+
+      // 监听设置变化
+      function setupSettingsListeners() {
+        const settingsElements = [
+          modelSelect, customModelInput, imageSizeSelect, customWidthInput, 
+          customHeightInput, numImagesInput, numInferenceStepsInput, 
+          guidanceScaleInput, rawModeInput, syncModeInput, enableSafetyCheckerInput
+        ];
+        
+        settingsElements.forEach(element => {
+          element.addEventListener('change', saveUserSettings);
+        });
+      }
+    } // End of initializeFalApp
+
+  </script>
+</body>
+</html>
